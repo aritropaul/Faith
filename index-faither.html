@@ -1,0 +1,193 @@
+<html>
+<head>
+	<title>API Example</title>
+	<link rel="stylesheet" type="text/css" href="theme.css">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="http://code.responsivevoice.org/responsivevoice.js"></script>
+	<script type="text/javascript">
+		var accessToken = "439a9026f53a4723a35d903bb518e78a";
+		var baseUrl = "https://api.api.ai/v1/";
+		$(document).ready(function() {
+			$("#input").keypress(function(event) {
+				if (event.which == 13) {
+					event.preventDefault();
+					send();
+				}
+			});
+			$("#rec").click(function(event) {
+				switchRecognition();
+			});
+		});
+		var recognition;
+		function startRecognition() {
+			recognition = new webkitSpeechRecognition();
+			recognition.onstart = function(event) {
+				updateRec();
+			};
+			recognition.onresult = function(event) {
+				var text = "";
+			    for (var i = event.resultIndex; i < event.results.length; ++i) {
+			    	text += event.results[i][0].transcript;
+			    }
+			    setInput(text);
+				stopRecognition();
+			};
+			recognition.onend = function() {
+				stopRecognition();
+			};
+			recognition.lang = "en-US";
+			recognition.start();
+		}
+	
+		function stopRecognition() {
+			if (recognition) {
+				recognition.stop();
+				recognition = null;
+			}
+			updateRec();
+		}
+		function switchRecognition() {
+			if (recognition) {
+				stopRecognition();
+			} else {
+				startRecognition();
+			}
+		}
+		function setInput(text) {
+			$("#input").val(text);
+			send();
+		}
+		function updateRec() {
+			$("#rec").text(recognition ? "Stop" : "Speak");
+		}
+		function send() {
+			var text = $("#input").val();
+			$.ajax({
+				type: "POST",
+				url: baseUrl + "query?v=20150910",
+				contentType: "application/json; charset=utf-8",
+				dataType: "json",
+				headers: {
+					"Authorization": "Bearer " + accessToken
+				},
+				data: JSON.stringify({ query: text, lang: "en", sessionId: "somerandomthing" }),
+				success: function(data) {
+                    setResponse(JSON.stringify(data, undefined, 2));
+                    readResponse(JSON.stringify(data, undefined, 2));
+				},
+				error: function() {
+					setResponse("Internal Server Error");
+				}
+			});
+			setResponse("Loading...");
+		}
+		function setResponse(val) {
+			$("#response").text(val);
+        }
+        
+        function readResponse(val){
+            var reply = JSON.parse(val)
+            document.getElementById("faith").innerHTML = reply.result.fulfillment.speech;
+            responsiveVoice.speak(reply.result.fulfillment.speech, "US English Female", {rate: 0.6});   
+            if(responsiveVoice.isPlaying()) {
+                console.log("I hope you are listening");
+            }
+        }
+	</script>
+	<style type="text/css">
+		body { width: 500px; margin: 0 auto; text-align: center; margin-top: 20px; }
+		div {  position: absolute; }
+		input { width: 400px; }
+		button { width: 50px; }
+		textarea { width: 100%; }
+        #center{text-align: center;}
+	</style>
+    <style type="text/css">
+    
+        @font-face {
+            font-family: 'Gotham';
+            src: url('fonts/Gotham.otf');
+        }
+
+		.chatbot{
+			width: 250px;
+			height: 541px;
+			background:#141414;
+		}
+
+		.entertext{
+			width: 200px;
+			position: absolute;
+			top: 100%;
+			left: 25px;
+			transform:translate(0%,-100%);
+			margin-top: -80px;
+			float: right;
+			background:transparent;
+			color:#fff;
+			font-size: 16px;
+			box-shadow: none;
+			border:none;
+			text-align: right;
+            font-family: 'Gotham';
+		}
+
+		input{
+			outline: none;
+		}
+		
+		.top-box{
+			height: 300px;
+			width: 100%;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			background:#fff;
+			border-bottom-left-radius: 30px;
+			border-bottom-right-radius: 30px;
+		}
+
+		.reply{
+			color:#141414;
+			font-size: 16px;
+			position: absolute;
+			top: 150px;
+			left: 25px;
+			width:200px;
+			text-align: left;
+            font-family: 'Gotham';
+		}
+
+        .logo{
+            height: 50px;
+            width: 50px;
+            position: absolute;
+            top: 130px;
+            left: 25px;
+        }
+
+        .speaker{
+            height:15px;
+            width: 215px;
+            background:#fff;
+            position: absolute;
+            top: 500px;
+            left: 50%;
+            transform:translate(-50%,-50%);
+        }
+
+	</style>
+</head>
+<body>
+	<div class="chatbot">
+		<div class="top-box">
+            <img class="logo" src="logo.png"/>
+        </div>
+		<input id="input" type="text" class="entertext" placeholder="Enter Message"> <button id="rec" class="speaker"></button>
+        <!--<br>Response<br> <textarea id="response" cols="40" rows="20"></textarea>-->
+        <br><br>
+        <div id = "center"><h2 id = "faith" class="reply">Faith's Reply</h2></div>
+	</div>
+</body>
+</html>
